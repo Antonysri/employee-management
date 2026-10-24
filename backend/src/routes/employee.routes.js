@@ -5,7 +5,11 @@ import employeeController from '../controllers/employee.controller.js';
 
 // 2. Middleware & Zod Schema import (Security Guard & Rule Book)
 import validateRequest from '../middlewares/validateRequest.js';
-import { createEmployeeSchema } from '../validators/employee.schema.js';
+
+import validateQuery from '../middlewares/validateQuery.js';
+
+import { createEmployeeSchema,listEmployeesQuerySchema } from '../validators/employee.schema.js';
+
 
 // 3. Express Router create panrom
 const router = express.Router();
@@ -20,6 +24,13 @@ router.post(
   '/',
   validateRequest(createEmployeeSchema), // 👈 Zod Validation Guard!
   employeeController.createEmployee     // 👈 Controller
+);
+
+// 🔵 2. GET ALL EMPLOYEES (GET /api/v1/employees)
+router.get(
+  '/',
+  validateQuery(listEmployeesQuerySchema), // 👈 URL Query validation guard!
+  employeeController.listEmployees
 );
 
 // // 🔵 2. GET ALL EMPLOYEES (GET /api/v1/employees)

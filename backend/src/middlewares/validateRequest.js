@@ -5,7 +5,7 @@ const validateRequest = (schema) => {
   // Request indha route-ku varumbodhu Express indha function-ai run pannum.
   return (req, res, next) => {
     // Client anuppuna JSON data req.body-la irukkum.
-    // safeParse data-va check pannum; error vandhaalum throw panni crash aagaadhu.
+    // safeParse data-va check,Zod schema kitta kuduthu parse pannum; error vandhaalum throw panni crash aagaadhu.
     const result = schema.safeParse(req.body);
 
     // Data schema-oda match aagalana request-ai inga stop panrom.
