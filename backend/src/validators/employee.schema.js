@@ -57,7 +57,20 @@ export const listEmployeesQuerySchema = z.object({
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
-export default {
-  createEmployeeSchema,
-  listEmployeesQuerySchema,
-};
+// ============================================================================
+// 🆔 ROUTE PARAMETER VALIDATION SCHEMA
+// URL-la vara :id (req.params.id) correct-ana MongoDB ObjectId format-ah nu check pannum.
+// ============================================================================
+export const employeeIdParamSchema = z.object({
+  id: z
+    .string()
+    .trim()
+    // Regular Expression (Regex): Exactly 24 characters, only 0-9 and a-f
+    .regex(/^[0-9a-fA-F]{24}$/, 'Invalid employee ID format. Must be a 24-character hexadecimal string'),
+});
+
+// export default {
+//   createEmployeeSchema,
+//   listEmployeesQuerySchema,
+//   employeeIdParamSchema,
+// };

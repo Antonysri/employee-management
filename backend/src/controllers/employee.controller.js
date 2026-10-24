@@ -33,8 +33,27 @@ const listEmployees = async (req, res, next) => {
   }
 };
 
+// ============================================================================
+// 🎯 CONTROLLER: GET EMPLOYEE BY ID
+// ============================================================================
+const getEmployeeById = async (req, res, next) => {
+  try {
+    // 1. validateParams middleware clean panna 'req.validatedParams.id'-ai service kitta pass panrom
+    const employee = await employeeService.getEmployeeById(req.validatedParams.id);
+    // 2. 200 OK status-oda employee data-vai return panrom
+    return res.status(200).json({
+      success: true,
+      data: employee,
+    });
+  } catch (error) {
+    // 3. 404 error illa vera DB error vandha errorHandler kitta pogum
+    return next(error);
+  }
+};
+
 // Make controller functions available to the routes.
 export default {
   createEmployee,
   listEmployees,
+  getEmployeeById,
 };

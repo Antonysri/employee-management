@@ -27,9 +27,19 @@ const findEmployees = async ({ filter, skip, limit }) => {
   return { employees, total };
 };
 
+// ============================================================================
+// 🔍 FIND ONE EMPLOYEE BY ID
+// MongoDB ObjectId vechu specific employee document-ai thedum.
+// ============================================================================
+const findById = async (id) => {
+  // .lean(): Plain JS object-ah fast-ah edukkum
+  return Employee.findById(id).lean();
+};
+
 // Make these functions available to the service layer.
 export default {
   findByEmail,
   createEmployee,
   findEmployees,
+  findById,
 };

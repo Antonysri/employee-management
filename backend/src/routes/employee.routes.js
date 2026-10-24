@@ -8,7 +8,9 @@ import validateRequest from '../middlewares/validateRequest.js';
 
 import validateQuery from '../middlewares/validateQuery.js';
 
-import { createEmployeeSchema,listEmployeesQuerySchema } from '../validators/employee.schema.js';
+import validateParams from '../middlewares/validateParams.js';
+
+import { createEmployeeSchema,listEmployeesQuerySchema,employeeIdParamSchema } from '../validators/employee.schema.js';
 
 
 // 3. Express Router create panrom
@@ -32,6 +34,14 @@ router.get(
   validateQuery(listEmployeesQuerySchema), // 👈 URL Query validation guard!
   employeeController.listEmployees
 );
+
+// 🔵 3. GET SINGLE EMPLOYEE BY ID
+router.get(
+  '/:id',
+  validateParams(employeeIdParamSchema), // 👈 3. Zod ObjectId Guard!
+  employeeController.getEmployeeById     // 👈 Controller
+);
+
 
 // // 🔵 2. GET ALL EMPLOYEES (GET /api/v1/employees)
 // router.get(

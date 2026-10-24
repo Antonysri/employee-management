@@ -93,8 +93,30 @@ const listEmployees = async (query) => {
     },
   };
 };
+
+
+// ============================================================================
+// 👤 GET EMPLOYEE BY ID (With 404 Not Found check)
+// ============================================================================
+const getEmployeeById = async (id) => {
+  // 1. Database kitta poi indha ID-oda employee-ai edukurom
+  const employee = await employeeRepository.findById(id);
+
+  // 2. ⚠️ Oru vela andha ID-la employee yaarum illana:
+  // Clean-ah 404 Not Found error throw panrom!
+  if (!employee) {
+    const error = new Error('Employee not found');
+    error.statusCode = 404; // 👈 404 Not Found status!
+    throw error;
+  }
+
+  // 3. Employee irundha avaroda details-ai return panrom
+  return employee;
+};
+
 // Make this function available to the controller.
 export default {
   createEmployee,
-  listEmployees
+  listEmployees,
+  getEmployeeById
 };
