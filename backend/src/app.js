@@ -54,7 +54,7 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 // 👉 2. MOUNT LINE
-app.use('/api/v1/employees', employeeRoutes);
+app.use('/api/v1/employees', employeeRoutes);//ALLOW POST,GET,PATCH,PUT,DELETE
 
 // Fallback & Error Handlers (Eppovume Kadasila dhaan irukkanum!)
 app.use(notFound);
