@@ -51,9 +51,32 @@ const getEmployeeById = async (req, res, next) => {
   }
 };
 
+// ============================================================================
+// 🎯 MODERN UPDATE CONTROLLER
+// ============================================================================
+const updateEmployee = async (req, res, next) => {
+  try {
+    // 1. URL ID (req.validatedParams.id) and Body (req.validatedBody)-ai service kitta pass panrom
+    const updatedEmployee = await employeeService.updateEmployee(
+      req.validatedParams.id,
+      req.validatedBody
+    );
+    // 2. 200 OK status-oda neat-ana JSON response anupuroam
+    return res.status(200).json({
+      success: true,
+      message: 'Employee updated successfully',
+      data: updatedEmployee,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+
 // Make controller functions available to the routes.
 export default {
   createEmployee,
   listEmployees,
   getEmployeeById,
+  updateEmployee,
 };

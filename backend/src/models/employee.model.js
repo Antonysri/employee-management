@@ -25,6 +25,25 @@ const employeeSchema = new mongoose.Schema(
       required: [true, 'Position is required'],
       trim: true,
     },
+    
+    // minSalary: {
+    //   type: Number,
+    //   required: true,
+    //   },
+
+    // salary: {
+    //   type: Number,
+    //   required: [true, 'Salary is required'],
+    //   min: [0, 'Salary cannot be negative'],
+
+    //   validate: {
+    //     validator: function (value) {
+    //       return value >= this.minSalary;
+    //     },
+    //     message: 'Salary is below minimum',
+    //   },
+    // },
+
     salary: {
       type: Number,
       required: [true, 'Salary is required'],

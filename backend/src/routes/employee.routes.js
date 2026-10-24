@@ -10,7 +10,7 @@ import validateQuery from '../middlewares/validateQuery.js';
 
 import validateParams from '../middlewares/validateParams.js';
 
-import { createEmployeeSchema,listEmployeesQuerySchema,employeeIdParamSchema } from '../validators/employee.schema.js';
+import { createEmployeeSchema,listEmployeesQuerySchema,employeeIdParamSchema,updateEmployeeSchema } from '../validators/employee.schema.js';
 
 
 // 3. Express Router create panrom
@@ -42,6 +42,16 @@ router.get(
   employeeController.getEmployeeById     // 👈 Controller
 );
 
+// 🟡 4. UPDATE EMPLOYEE (PATCH /api/v1/employees/:id)
+// 🛡️ 2 GUARDS:
+// Guard 1: validateParams -> Checks :id is a 24-character hexadecimal ObjectId
+// Guard 2: validateRequest -> Checks body has at least one valid partial field
+router.patch(
+  '/:id',
+  validateParams(employeeIdParamSchema),
+  validateRequest(updateEmployeeSchema),
+  employeeController.updateEmployee
+);
 
 // // 🔵 2. GET ALL EMPLOYEES (GET /api/v1/employees)
 // router.get(

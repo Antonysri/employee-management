@@ -69,8 +69,14 @@ export const employeeIdParamSchema = z.object({
     .regex(/^[0-9a-fA-F]{24}$/, 'Invalid employee ID format. Must be a 24-character hexadecimal string'),
 });
 
-// export default {
-//   createEmployeeSchema,
-//   listEmployeesQuerySchema,
-//   employeeIdParamSchema,
-// };
+// ============================================================================
+// 4. 🟡 MODERN UPDATE SCHEMA (DRY Standard with .partial())
+// ============================================================================
+export const updateEmployeeSchema = createEmployeeSchema
+  // ✨ .partial(): Create schema-la irukkura ella rules-aiyum automatic-ah optional-ah maathum!
+  .partial()
+  // 🛡️ .refine(): User empty object {} anupina reject panni error tharum
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    'At least one field must be provided for update'
+  );

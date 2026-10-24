@@ -114,9 +114,39 @@ const getEmployeeById = async (id) => {
   return employee;
 };
 
+// ============================================================================
+// 📝 MODERN UPDATE SERVICE (With Safe Self-Email Exemption & 404 Check)
+// ============================================================================
+const updateEmployee = async (id, updateData) => {
+  // 1. EMAIL CONFLICT LOGIC:
+  // User email-ai maatha try pannina, andha email VERA yaaravadhu kitta irukka nu check panrom
+  if (updateData.email) {
+    const existingEmployee = await employeeRepository.findByEmail(updateData.email);
+    // ⚠️ CRITICAL: existingEmployee vera ID aana mattum dhaan 409 Conflict!
+    // (Employee thaanoda sontha email-aiye update body-la anupina conflict vara koodaadhu)
+    if (existingEmployee && existingEmployee._id.toString() !== id) {
+      const error = new Error('Another employee with this email already exists');
+      error.statusCode = 409;
+      throw error;
+    }
+  }
+  // 2. Database-la $set vechu update panrom
+  const updatedEmployee = await employeeRepository.updateEmployee(id, updateData);
+  // 3. 404 NOT FOUND CHECK:
+  // Indha ID-la employee yaarum illana clean 404 tharanum
+  if (!updatedEmployee) {
+    const error = new Error('Employee not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  // 4. Updated employee data-vai controller kitta return panrom
+  return updatedEmployee;
+};
+
 // Make this function available to the controller.
 export default {
   createEmployee,
   listEmployees,
-  getEmployeeById
+  getEmployeeById,
+  updateEmployee
 };

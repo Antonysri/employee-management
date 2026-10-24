@@ -36,10 +36,27 @@ const findById = async (id) => {
   return Employee.findById(id).lean();
 };
 
+// ============================================================================
+// 📝 MODERN UPDATE REPOSITORY (MongoDB Atomic $set & Query Context)
+// ============================================================================
+const updateEmployee = async (id, updateData) => {
+  return Employee.findByIdAndUpdate(
+    id,
+    // 1. $set: MongoDB-oda explicit operator (Field-level safe partial update)
+    { $set: updateData },
+    {
+      new: true,           // 👈 Modified pudhu document-ai return pannum
+      runValidators: true, // 👈 Update-layum Schema rules (min: 0, enum) enforce aagum
+      //context: 'query',    // 👈 Required: Update query-kulla validators 'this' context sariya bind aaga
+    }
+  ).lean();                // 👈 Plain JS object (High performance)
+};
+
 // Make these functions available to the service layer.
 export default {
   findByEmail,
   createEmployee,
   findEmployees,
   findById,
+  updateEmployee,
 };
