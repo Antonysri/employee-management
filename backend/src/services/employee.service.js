@@ -143,10 +143,30 @@ const updateEmployee = async (id, updateData) => {
   return updatedEmployee;
 };
 
+// ============================================================================
+// 🗑️ DELETE / DEACTIVATE SERVICE (With 404 Check & Dynamic Message)
+// ============================================================================
+const deleteEmployee = async (id, { permanent = false } = {}) => {
+  // 1. Repository kitta solli delete / deactivate panrom
+  const employee = await employeeRepository.deleteEmployee(id, { permanent });
+  // 2. Oru vela andha ID-la employee yaarum illana:
+  if (!employee) {
+    const error = new Error('Employee not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  // 3. User-kku thagundha message ready panrom
+  const message = permanent
+    ? 'Employee permanently deleted from database'
+    : 'Employee deactivated successfully';
+  return { employee, message };
+};
+
 // Make this function available to the controller.
 export default {
   createEmployee,
   listEmployees,
   getEmployeeById,
-  updateEmployee
+  updateEmployee,
+  deleteEmployee
 };

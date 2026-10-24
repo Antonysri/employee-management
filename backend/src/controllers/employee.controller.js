@@ -72,6 +72,27 @@ const updateEmployee = async (req, res, next) => {
   }
 };
 
+// ============================================================================
+// 🎯 CONTROLLER: DELETE / DEACTIVATE EMPLOYEE
+// ============================================================================
+const deleteEmployee = async (req, res, next) => {
+  try {
+    // 1. URL ID (req.validatedParams.id) and permanent flag (req.validatedQuery.permanent) edukurom
+    const { employee, message } = await employeeService.deleteEmployee(
+      req.validatedParams.id,
+      { permanent: req.validatedQuery.permanent }
+    );
+    // 2. 200 OK status-oda success message & data anupurom
+    return res.status(200).json({
+      success: true,
+      message,
+      data: employee,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 
 // Make controller functions available to the routes.
 export default {
@@ -79,4 +100,5 @@ export default {
   listEmployees,
   getEmployeeById,
   updateEmployee,
+  deleteEmployee
 };

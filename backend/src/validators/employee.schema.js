@@ -80,3 +80,12 @@ export const updateEmployeeSchema = createEmployeeSchema
     (data) => Object.keys(data).length > 0,
     'At least one field must be provided for update'
   );
+
+// ============================================================================
+// 🗑️ DELETE / DEACTIVATE QUERY SCHEMA
+// ?permanent=true nu anupina Hard Delete; anupala na default Soft Delete (Deactivation)!
+// ============================================================================
+export const deleteEmployeeQuerySchema = z.object({
+  // URL string "true" / "false"-ai boolean true/false-ah convert pannum (Default: false)
+  permanent: z.coerce.boolean().default(false),
+});

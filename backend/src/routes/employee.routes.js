@@ -10,7 +10,7 @@ import validateQuery from '../middlewares/validateQuery.js';
 
 import validateParams from '../middlewares/validateParams.js';
 
-import { createEmployeeSchema,listEmployeesQuerySchema,employeeIdParamSchema,updateEmployeeSchema } from '../validators/employee.schema.js';
+import { createEmployeeSchema,listEmployeesQuerySchema,employeeIdParamSchema,updateEmployeeSchema , deleteEmployeeQuerySchema } from '../validators/employee.schema.js';
 
 
 // 3. Express Router create panrom
@@ -28,7 +28,7 @@ router.post(
   employeeController.createEmployee     // 👈 Controller
 );
 
-// 🔵 2. GET ALL EMPLOYEES (GET /api/v1/employees)
+// 🔵 2. GET ALL EMPLOYEES (GET /api/v1/employees) PAGINATION
 router.get(
   '/',
   validateQuery(listEmployeesQuerySchema), // 👈 URL Query validation guard!
@@ -51,6 +51,16 @@ router.patch(
   validateParams(employeeIdParamSchema),
   validateRequest(updateEmployeeSchema),
   employeeController.updateEmployee
+);
+
+// -------------------------------------------------------------
+// 🔴 5. DELETE / DEACTIVATE EMPLOYEE (DELETE /api/v1/employees/:id)
+// -------------------------------------------------------------
+router.delete(
+  '/:id',
+  validateParams(employeeIdParamSchema),     // ID Guard
+  validateQuery(deleteEmployeeQuerySchema), // Query Guard (?permanent=true)
+  employeeController.deleteEmployee         // Controller
 );
 
 // // 🔵 2. GET ALL EMPLOYEES (GET /api/v1/employees)

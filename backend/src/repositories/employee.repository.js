@@ -52,6 +52,23 @@ const updateEmployee = async (id, updateData) => {
   ).lean();                // 👈 Plain JS object (High performance)
 };
 
+// ============================================================================
+// 🗑️ DELETE / DEACTIVATE EMPLOYEE REPOSITORY
+// ============================================================================
+const deleteEmployee = async (id, { permanent = false } = {}) => {
+  // 1. Permanent true aana: Database-la irundhu muzhusa remove pannum (Hard Delete)
+  if (permanent) {
+    return Employee.findByIdAndDelete(id).lean();
+  }
+  // 2. Default (Safe): Status-ai 'INACTIVE'-nu maathum (Soft Delete / Deactivation)
+  return Employee.findByIdAndUpdate(
+    id,
+    { $set: { status: 'INACTIVE' } },
+    { new: true } // Updated document thirumba tharum
+  ).lean();
+};
+
+
 // Make these functions available to the service layer.
 export default {
   findByEmail,
@@ -59,4 +76,5 @@ export default {
   findEmployees,
   findById,
   updateEmployee,
+  deleteEmployee,
 };

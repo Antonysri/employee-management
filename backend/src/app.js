@@ -53,7 +53,7 @@ app.get('/api/v1/health', (req, res) => {
     });
 });
 
-// 👉 2. MOUNT LINE (Health check-kku keela, notFound-kku munnadi!)
+// 👉 2. MOUNT LINE
 app.use('/api/v1/employees', employeeRoutes);
 
 // Fallback & Error Handlers (Eppovume Kadasila dhaan irukkanum!)
