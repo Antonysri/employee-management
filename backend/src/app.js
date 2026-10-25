@@ -15,6 +15,7 @@ import mongoose from 'mongoose';
 
 // Import the employee router for employee API endpoints.
 import employeeRoutes from './routes/employee.routes.js';
+import authRoutes from './routes/auth.routes.js';
 
 // Import middleware for unmatched routes and errors.
 import notFound from './middlewares/notFound.js';
@@ -52,10 +53,13 @@ app.get('/api/v1/health', (req, res) => {
         database : isConnected ? 'Connected' : 'Disconnected'
     });
 });
+//app.use ALLOW POST,GET,PATCH,PUT,DELETE METHODS
 
-// 👉 2. MOUNT LINE
-app.use('/api/v1/employees', employeeRoutes);//ALLOW POST,GET,PATCH,PUT,DELETE
+// 🔐 AUTH ROUTES
+app.use('/api/v1/auth', authRoutes);
 
+// 👥 EMPLOYEE ROUTES
+app.use('/api/v1/employees', employeeRoutes);
 // Fallback & Error Handlers (Eppovume Kadasila dhaan irukkanum!)
 app.use(notFound);
 app.use(errorHandler);
