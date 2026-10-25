@@ -1,7 +1,8 @@
 // Mongoose-ai import panrom.
 // Idhu MongoDB schema matrum model create panna use aagum.
 import mongoose from 'mongoose';
-
+// 🎭 Roles constants import panrom:
+import { ALL_ROLES, ROLES } from '../constants/roles.js';
 // ============================================================================
 // USER SCHEMA
 // User login details, role, account status, invitation information store aagum.
@@ -67,11 +68,10 @@ const userSchema = new mongoose.Schema(
       // ADMIN: full administration permissions.
       // HR: employee management permissions.
       // EMPLOYEE: limited employee permissions.
-      enum: ['ADMIN', 'HR', 'EMPLOYEE'],
-
-      // Role specify pannala-na EMPLOYEE role assign aagum.
-      default: 'EMPLOYEE',
-
+      // Hardcoded string array-ku badhila ALL_ROLES constant use panrom:
+      enum: ALL_ROLES,           // ['ADMIN', 'HR', 'EMPLOYEE']
+      // Default-a EMPLOYEE role:
+      default: ROLES.EMPLOYEE,
       // Role string format-la store aagum.
       type: String,
     },
