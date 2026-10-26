@@ -1,71 +1,59 @@
 import { z } from 'zod';
 
+// 🎭 Roles constants import panrom (Magic strings thavirkka):
+import { ROLES } from '../constants/roles.js';
+
 // ============================================================================
 // 🟢 CREATE EMPLOYEE VALIDATION SCHEMA
 // POST /api/v1/employees request body-la vara data-vai verify panna idhu thevai.
 // ============================================================================
 export const createEmployeeSchema = z.object({
   // 1. NAME:
-  // - Must be String
-  // - .trim(): Munnadi, pinnaadi irukura extra spaces-ai remove pannum
-  // - .min(2).max(100): Peyar 2 mudhal 100 characters kulla irukkanum
+  // - Must be String, trimmed, 2 to 100 characters
   name: z.string().trim().min(2).max(100),
 
   // 2. EMAIL:
-  // - .email(): Proper email format-ah nu check pannum (e.g. name@domain.com)
-  // - .max(255): Maximum 255 characters
-  // - .transform(): User 'Karthik@GMAIL.com' nu type panninaalum, automatic-ah 'karthik@gmail.com' nu lowercase-ah maathidum!
+  // - Must be valid email, lowercase transformation
   email: z.string().trim().email().max(255).transform((value) => value.toLowerCase()),
 
   // 3. DEPARTMENT:
-  // - Employee endha department (e.g. 'Engineering', 'HR')
-  // - 2 mudhal 100 characters kulla irukkanum
   department: z.string().trim().min(2).max(100),
 
   // 4. POSITION:
-  // - Employee-oda job title (e.g. 'Backend Developer', 'QA Lead')
-  // - 2 mudhal 100 characters kulla irukkanum
   position: z.string().trim().min(2).max(100),
 
   // 5. SALARY:
-  // - Must be a Number
-  // - .nonnegative(): Negative salary (-500) poda koodaadhu, 0 illa adhukku mela dhaan irukkanum (>= 0)
+  // - Non-negative number (>= 0)
   salary: z.number().nonnegative(),
 
   // 6. STATUS (Optional):
-  // - .optional(): Indha field mandatory illa, skip pannalaam
-  // - .enum(): Kudutha 'ACTIVE' illa 'INACTIVE' mattum dhaan irukkanum, vera endha string-um poda mudiyaadhu
-  // - Kudukkala na Mongoose schema automatic-ah default 'ACTIVE' nu assign pannikkum
+  // - Default-a Mongoose 'ACTIVE' vachikkum
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+
+  // 7. 🎭 ACCOUNT ROLE (Optional with Default):
+  // - Kudutha ADMIN, HR, EMPLOYEE mattum dhaan allow aagum.
+  // - Client indha field-ai anupala na, Zod automatic-ah 'EMPLOYEE' role assign pannidum!
+  role: z
+    .enum([ROLES.ADMIN, ROLES.HR, ROLES.EMPLOYEE])
+    .default(ROLES.EMPLOYEE),
 });
 
 // Validate query parameters used to list employees.
 export const listEmployeesQuerySchema = z.object({
-  // 1. Convert the page value from a URL string to a number (Default: page 1).
   page: z.coerce.number().int().min(1).default(1),
-
-  // 2. Convert the limit value and prevent very large page requests (Max 100, Default: 10).
   limit: z.coerce.number().int().min(1).max(100).default(10),
-
-  // 3. Search employee names, emails, departments, and positions.
   search: z.string().trim().max(100).optional(),
-
-  // 4. Filter employees by department.
   department: z.string().trim().max(100).optional(),
-
-  // 5. Filter employees by their active status.
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
 });
 
 // ============================================================================
 // 🆔 ROUTE PARAMETER VALIDATION SCHEMA
-// URL-la vara :id (req.params.id) correct-ana MongoDB ObjectId format-ah nu check pannum.
 // ============================================================================
 export const employeeIdParamSchema = z.object({
   id: z
     .string()
     .trim()
-    // Regular Expression (Regex): Exactly 24 characters, only 0-9 and a-f
     .regex(/^[0-9a-fA-F]{24}$/, 'Invalid employee ID format. Must be a 24-character hexadecimal string'),
 });
 
@@ -73,9 +61,7 @@ export const employeeIdParamSchema = z.object({
 // 4. 🟡 MODERN UPDATE SCHEMA (DRY Standard with .partial())
 // ============================================================================
 export const updateEmployeeSchema = createEmployeeSchema
-  // ✨ .partial(): Create schema-la irukkura ella rules-aiyum automatic-ah optional-ah maathum!
   .partial()
-  // 🛡️ .refine(): User empty object {} anupina reject panni error tharum
   .refine(
     (data) => Object.keys(data).length > 0,
     'At least one field must be provided for update'
@@ -83,9 +69,7 @@ export const updateEmployeeSchema = createEmployeeSchema
 
 // ============================================================================
 // 🗑️ DELETE / DEACTIVATE QUERY SCHEMA
-// ?permanent=true nu anupina Hard Delete; anupala na default Soft Delete (Deactivation)!
 // ============================================================================
 export const deleteEmployeeQuerySchema = z.object({
-  // URL string "true" / "false"-ai boolean true/false-ah convert pannum (Default: false)
   permanent: z.coerce.boolean().default(false),
 });

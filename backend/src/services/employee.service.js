@@ -1,26 +1,98 @@
-// Import the repository that handles employee database queries.
+// backend/src/services/employee.service.js
+
+// 1. Repositories import
 import employeeRepository from '../repositories/employee.repository.js';
+import userRepository from '../repositories/user.repository.js';
 
-// Create an employee after checking the business rules.
+// 2. Token generator helper import
+import { generateTokenPair } from '../utils/crypto.util.js';
+
+// 3. Constants import
+import { ROLES } from '../constants/roles.js';
+
+// ============================================================================
+// 🟢 CREATE EMPLOYEE & START INVITATION WORKFLOW
+// 1. Employee create pannum
+// 2. Linked User account 'INVITED' state-la create pannum
+// 3. 24-hours valid secure token generate panni invitation link ready pannum
+// ============================================================================
 const createEmployee = async (employeeData) => {
-  // Check whether another employee already uses this email.
-  const existingEmployee = await employeeRepository.findByEmail(
-    employeeData.email
-  );
-
-  // Stop creation when the email is already in use.
+  const { email } = employeeData;
+  // --------------------------------------------------------------------------
+  // STEP 1: DOUBLE CONFLICT CHECK (Safety First)
+  // Employee table-layo alladhu User table-layo indha email irukka koodaadhu!
+  // --------------------------------------------------------------------------
+  const existingEmployee = await employeeRepository.findByEmail(email);
   if (existingEmployee) {
     const error = new Error('An employee with this email already exists');
-
-    // Use HTTP 409 to show that the data conflicts with an existing employee.
     error.statusCode = 409;
-
-    // Send this error to the controller and central error handler.
     throw error;
   }
-
-  // Save the employee when the email is available.
-  return employeeRepository.createEmployee(employeeData);
+  const existingUser = await userRepository.findByEmail(email);
+  if (existingUser) {
+    const error = new Error('A user account with this email already exists');
+    error.statusCode = 409;
+    throw error;
+  }
+  // --------------------------------------------------------------------------
+  // STEP 2: SEPARATE ROLE FROM EMPLOYEE FIELDS
+  // 'role' field User model-kku pogum; meedhi fields Employee model-kku pogum.
+  // --------------------------------------------------------------------------
+  const { role = ROLES.EMPLOYEE, ...employeeFields } = employeeData;
+  // --------------------------------------------------------------------------
+  // STEP 3: GENERATE SECURE INVITATION TOKEN PAIR
+  // rawToken -> Email link-la poga koodiyadhu
+  // hashedToken -> DB-la safe-a store aaga koodiyadhu (SHA-256)
+  // --------------------------------------------------------------------------
+  const { rawToken, hashedToken } = generateTokenPair();
+  // 24 Hours Expiry (Current time + 24 hours in milliseconds):
+  const invitationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  // --------------------------------------------------------------------------
+  // STEP 4: SAVE EMPLOYEE TO DATABASE
+  // --------------------------------------------------------------------------
+  const newEmployee = await employeeRepository.createEmployee(employeeFields);
+  // --------------------------------------------------------------------------
+  // STEP 5: SAVE LINKED USER ACCOUNT (STATUS: 'INVITED')
+  // --------------------------------------------------------------------------
+  const newUser = await userRepository.createUser({
+    employeeId: newEmployee._id,
+    email: newEmployee.email,
+    role,
+    status: 'INVITED',
+    invitationToken: hashedToken,
+    invitationExpiresAt,
+  });
+  // --------------------------------------------------------------------------
+  // STEP 6: CONSTRUCT INVITATION URL (Frontend Setup Password Link)
+  // --------------------------------------------------------------------------
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const invitationLink = `${clientUrl}/setup-password?token=${rawToken}`;
+  // --------------------------------------------------------------------------
+  // STEP 7: EMAIL SIMULATION (Console Log for Local Dev Testing)
+  // Production-la real email pogum; Local dev-la terminal-la link print panrom!
+  // --------------------------------------------------------------------------
+  console.log('\n============================================================');
+  console.log('✉️  [EMAIL SERVICE SIMULATION]');
+  console.log(`To: ${newEmployee.email} (${newEmployee.name})`);
+  console.log(`Subject: You have been invited to join Employee Portal!`);
+  console.log(`Role Assigned: ${newUser.role}`);
+  console.log(`🔗 Activation Link: ${invitationLink}`);
+  console.log(`⏳ Link Expires At: ${invitationExpiresAt.toISOString()}`);
+  console.log('============================================================\n');
+  // --------------------------------------------------------------------------
+  // STEP 8: RETURN DATA
+  // Controller kitta employee details koodave invitation metadata-vai anupurom
+  // --------------------------------------------------------------------------
+  return {
+    employee: newEmployee,
+    invitation: {
+      accountStatus: newUser.status,
+      role: newUser.role,
+      expiresAt: invitationExpiresAt,
+      // Dev mode-la testing easya irukka response-layum link tharrom:
+      invitationLink,
+    },
+  };
 };
 
 // ============================================================================

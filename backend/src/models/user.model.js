@@ -49,9 +49,6 @@ const userSchema = new mongoose.Schema(
     // User password-oda hash value mattum inga store aagum.
     // Original password-ai database-la store panna koodadhu.
     passwordHash: {
-      // Password hash illama active account create panna mudiyadhu.
-      required: [true, 'Password hash is required'],
-
       // API query-la User document edukkumbodhu indha field default-ah varaadhu.
       // Login verify panna thevai irundhaal .select('+passwordHash') use pannalaam.
       select: false,
@@ -59,6 +56,13 @@ const userSchema = new mongoose.Schema(
       // Hash value string format-la irukkum.
       // Example: "$2b$12$..." — bcrypt hash.
       type: String,
+      
+      // Account 'ACTIVE' ஆக இருக்கும் போது மட்டுமே Password கட்டாயம்!
+      // 'INVITED' ஆக இருக்கும் போது Password இல்லாமலே சேவ் பண்ணலாம்!
+      required : function(){
+        return this.status === 'ACTIVE'
+      },
+
     },
 
     // User enna actions panna mudiyum-nu role decide pannum.
