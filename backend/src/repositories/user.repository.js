@@ -53,6 +53,16 @@ const findDocumentByEmail = async (email) => {
   return User.findOne({ email });
 };
 
+// 8. 🚪 UPDATE LAST LOGOUT TIMESTAMP:
+// User logout aagumbodhu andha nerathai DB-la save panrom.
+const updateLastLogout = async (userId) => {
+  return User.findByIdAndUpdate(
+    userId,
+    { $set: { lastLogoutAt: new Date() } },
+    { new: true }
+  );
+};
+
 export default {
   findByEmailWithPassword,
   findById,
@@ -61,4 +71,5 @@ export default {
   findValidInvitationUser,
   findByIdWithProfile,
   findDocumentByEmail,
+  updateLastLogout,
 };

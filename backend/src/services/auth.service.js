@@ -187,9 +187,24 @@ const resendInvitation = async (email) => {
   };
 };
 
+// ============================================================================
+// 5. 🚪 LOGOUT SERVICE (With Real-Time Token Invalidation)
+// ============================================================================
+const logout = async (userId) => {
+  // 1. Database-la lastLogoutAt timestamp-ai update panrom:
+  await userRepository.updateLastLogout(userId);
+
+  console.log(`🔒 User ${userId} successfully logged out. All prior tokens invalidated.`);
+
+  return {
+    message: 'Logged out successfully. Session invalidated.',
+  };
+};
+
 export default {
   login,
   setupPassword,
   getMe,
-  resendInvitation
+  resendInvitation,
+  logout
 };

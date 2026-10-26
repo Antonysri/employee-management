@@ -49,5 +49,7 @@ router.post(
   authController.resendInvitation
 );
 
+// POST /api/v1/auth/logout
+router.post('/logout', authenticate, authController.logout);
 
 export default router;

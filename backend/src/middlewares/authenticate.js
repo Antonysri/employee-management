@@ -72,8 +72,21 @@ export const authenticate = async (req, res, next) => {
         message: `Account is ${user.status.toLowerCase()}. Access denied.`,
       });
     }
+    // 6. 🚪 TOKEN INVALIDATION CHECK (After Logout):
+    // User logout pannina nerathukku MUNNADI indha token create aagirundhaa, reject pannu!
+    if (user.lastLogoutAt) {
+      // Milliseconds-ai Seconds-aaga convert panrom:
+      const logoutTimeInSeconds = Math.floor(new Date(user.lastLogoutAt).getTime() / 1000);
+      // Token issued time logout time-ai vida pazhasaa irundhaa:
+      if (decoded.iat < logoutTimeInSeconds) {
+        return res.status(401).json({
+          success: false,
+          message: 'Session has been invalidated by logout. Please login again.',
+        });
+      }
+    }
 
-    // 6. ATTACH USER TO REQUEST OBJECT:
+    // 7. ATTACH USER TO REQUEST OBJECT:
     // Adutha controller / authorize middleware use panna, req.user-la user info-ai vachidrom!
     req.user = user;
 

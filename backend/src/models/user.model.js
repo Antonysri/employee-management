@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema(
       // Hash value string format-la irukkum.
       // Example: "$2b$12$..." — bcrypt hash.
       type: String,
-      
+
       // Account 'ACTIVE' ஆக இருக்கும் போது மட்டுமே Password கட்டாயம்!
       // 'INVITED' ஆக இருக்கும் போது Password இல்லாமலே சேவ் பண்ணலாம்!
       required : function(){
@@ -114,7 +114,14 @@ const userSchema = new mongoose.Schema(
       // Invitation create pannumbodhu expiry date set pannalaam.
       type: Date,
     },
+    // 🚪 Logout aana kadaisi neram:
+    // Idharku munnadi create aana endha pazhaiya JWT-aiyum block panna use aagum!
+    lastLogoutAt: {
+      type: Date,
+      default: null,
+    },
   },
+  
   {
     // Mongoose createdAt and updatedAt fields-ai automatic-ah add pannum.
     // createdAt: user account create aana time.

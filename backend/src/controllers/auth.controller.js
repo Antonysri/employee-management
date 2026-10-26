@@ -68,9 +68,28 @@ const resendInvitation = async (req, res, next) => {
   }
 };
 
+// backend/src/controllers/auth.controller.js
+
+const logout = async (req, res, next) => {
+  try {
+    await authService.logout(req.user._id);
+
+    // 🍪 BACKEND தான் இந்த Command-ஐ போடும்:
+    res.clearCookie('token'); // 👈 இங்கதான் Backend இந்த வேலையை பண்ணும்!
+
+    return res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   login,
   setupPassword,
   getMe,
   resendInvitation,
+  logout
 };
