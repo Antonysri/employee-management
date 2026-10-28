@@ -11,7 +11,10 @@ import { ROLES } from '../constants/roles.js';
 import { 
   loginSchema, 
   setupPasswordSchema,
-  resendInvitationSchema 
+  resendInvitationSchema,
+  forgotPasswordSchema, 
+  verifyResetCodeSchema, 
+  resetPasswordSchema  
 } from '../validators/auth.schema.js';
 
 const router = express.Router();
@@ -49,7 +52,37 @@ router.post(
   authController.resendInvitation
 );
 
-// POST /api/v1/auth/logout
+//5. POST /api/v1/auth/logout
 router.post('/logout', authenticate, authController.logout);
+
+// ============================================================================
+// 5. 📩 POST /api/v1/auth/forgot-password (PUBLIC)
+// 60-second cooldown + 6-digit OTP mail அனுப்பும்
+// ============================================================================
+router.post(
+  '/forgot-password',
+  validateRequest(forgotPasswordSchema),
+  authController.forgotPassword
+);
+
+// ============================================================================
+// 6. 🔢 POST /api/v1/auth/verify-reset-code (PUBLIC)
+// 6-digit OTP verify செய்யும் + 5-thadava thappu panna block pannum
+// ============================================================================
+router.post(
+  '/verify-reset-code',
+  validateRequest(verifyResetCodeSchema),
+  authController.verifyResetCode
+);
+
+// ============================================================================
+// 7. 🔑 POST /api/v1/auth/reset-password (PUBLIC)
+// resetToken வைத்து புதிய பாஸ்வேர்ட் மாற்றும் + பழைய session-களை logout செய்யும்
+// ============================================================================
+router.post(
+  '/reset-password',
+  validateRequest(resetPasswordSchema),
+  authController.resetPassword
+);
 
 export default router;

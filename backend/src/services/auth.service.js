@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { hashToken,generateTokenPair } from '../utils/crypto.util.js';
-
+import { hashToken,generateTokenPair,generateNumericOtp } from '../utils/crypto.util.js';
+import { sendInvitationEmail,sendPasswordResetOtpEmail } from '../utils/email.util.js';
 import userRepository from '../repositories/user.repository.js';
 import { generateAccessToken } from '../utils/jwt.util.js';
 
@@ -38,7 +38,7 @@ const login = async ({ email, password }) => {
   // User anupina plain password-aiyum, DB-la irukura hash-aiyum bcrypt compare pannum
   const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
 
-  if (!isPasswordMatch) {
+  if (!isPasswordMatch) {passwordHash
     const error = new Error('Invalid email or password');
     error.statusCode = 401;
     throw error;
@@ -169,15 +169,13 @@ const resendInvitation = async (email) => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const newInvitationLink = `${clientUrl}/setup-password?token=${rawToken}`;
 
-  // 6. ✉️ EMAIL SERVICE SIMULATION:
-  console.log('\n============================================================');
-  console.log('✉️  [EMAIL SERVICE SIMULATION - RESEND INVITATION]');
-  console.log(`To: ${user.email}`);
-  console.log(`Subject: Your New Invitation Link to Employee Portal`);
-  console.log(`Role: ${user.role}`);
-  console.log(`🔗 NEW Activation Link: ${newInvitationLink}`);
-  console.log(`⏳ New Expiry: ${newExpiresAt.toISOString()}`);
-  console.log('============================================================\n');
+  // 6. ✉️ REAL EMAIL DISPATCH:
+  await sendInvitationEmail({
+    to: user.email,
+    name: user.email.split('@')[0], // அல்லது employee name
+    role: user.role,
+    invitationLink: newInvitationLink,
+  });
 
   return {
     email: user.email,
@@ -200,11 +198,208 @@ const logout = async (userId) => {
     message: 'Logged out successfully. Session invalidated.',
   };
 };
+// ============================================================================
+// 6. 📩 FORGOT PASSWORD SERVICE (Request 6-Digit OTP with 60s Cooldown)
+// ============================================================================
+const forgotPassword = async (email) => {
+  // A. User-ai OTP fields kooda thedurom:
+  const user = await userRepository.findByEmailWithResetFields(email);
+
+  // 🛡️ ANTI-ENUMERATION PROTECTION:
+  // User database-la illana kooda "Email not found" nu solla koodaadhu!
+  // Hacker-kku clue tharaama generic 200 success response tharuvom:
+  if (!user || user.status === 'DEACTIVATED') {
+    return {
+      message: 'If that email address is in our database, we will send you a verification code.',
+    };
+  }
+
+  // B. ⏱️ 60-SECOND COOLDOWN CHECK (Rate Limiting):
+  // User adikkadi "Send Code" click panni spam panna koodaadhu:
+  if (user.passwordResetLastSentAt) {
+    const timePassedInSeconds = (Date.now() - new Date(user.passwordResetLastSentAt).getTime()) / 1000;
+    if (timePassedInSeconds < 60) {
+      const waitSeconds = Math.ceil(60 - timePassedInSeconds);
+      const error = new Error(`Please wait ${waitSeconds} seconds before requesting a new code.`);
+      error.statusCode = 429; // 429 Too Many Requests
+      throw error;
+    }
+  }
+
+  // C. 🔢 GENERATE 6-DIGIT OTP & HASH:
+  const rawOtp = generateNumericOtp(); // eg: "849201"
+  const hashedOtp = hashToken(rawOtp); // SHA-256 hash for database
+
+  // D. 💾 SAVE TO DATABASE:
+  user.passwordResetCode = hashedOtp;
+  user.passwordResetExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 👈 5 MINUTES EXPIRY!
+  user.passwordResetLastSentAt = new Date(); // 60s cooldown-kku
+  user.passwordResetAttempts = 0; // 👈 Attempts counter-ai fresh-a 0 aakurom
+  await user.save();
+
+  // E. ✉️ SEND REAL EMAIL VIA NODEMAILER:
+  await sendPasswordResetOtpEmail({
+    to: user.email,
+    otpCode: rawOtp,
+  });
+
+  return {
+    message: 'If that email address is in our database, we will send you a verification code.',
+  };
+};
+
+// ============================================================================
+// 7. 🔢 VERIFY RESET CODE SERVICE (5-Attempt Guard & 15-Minute Token)
+// ============================================================================
+// Verify the password reset code submitted for the user's email.
+// User anuppuna email-um verification code-um verify panna function.
+const verifyResetCode = async ({ email, code }) => {
+  // Email vachu user-aiyum password reset fields-aiyum database-la thedurom.
+  const user = await userRepository.findByEmailWithResetFields(email);
+
+  // Andha email-ku account illaina inga stop panni error anupprom.
+  if (!user) {
+    const error = new Error('Invalid email or verification code');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 5 thadava thappana OTP enter pannitaangala-nu check panrom.
+  if (user.passwordResetAttempts >= 5) {
+    // Limit reach aana current OTP-um expiry time-um clear panrom.
+    user.passwordResetCode = undefined;
+    user.passwordResetExpiresAt = undefined;
+
+    // Pudhu OTP request pannina attempt count zero-la start aagum.
+    user.passwordResetAttempts = 0;
+
+    // Indha changes-ai MongoDB-la save panrom.
+    await user.save();
+
+    // Current OTP invalidate aayiduchu-nu client-kku error anupprom.
+    const error = new Error(
+      'Too many failed attempts. This verification code has been invalidated. Please request a new code.'
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Database-la active OTP-um adhan expiry time-um irukka-nu check panrom.
+  if (!user.passwordResetCode || !user.passwordResetExpiresAt) {
+    // OTP illaina user mudhal-la pudhu code request panna sollrom.
+    const error = new Error(
+      'No active verification code found. Please request a new code.'
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Ippo irukkura time OTP expiry time-ai thaandiyachaa-nu check panrom.
+  if (Date.now() > new Date(user.passwordResetExpiresAt).getTime()) {
+    // OTP expire aayiduchuna, adhaiyum expiry time-aiyum database-la irundhu clear panrom.
+    user.passwordResetCode = undefined;
+    user.passwordResetExpiresAt = undefined;
+
+    // Expire aana OTP-ku related attempts count-ai reset panrom.
+    user.passwordResetAttempts = 0;
+
+    // Clear panna changes-ai MongoDB-la save panrom.
+    await user.save();
+
+    // OTP expire aayiduchu-nu client-kku solli pudhu code request panna vaikkurom.
+    const error = new Error(
+      'Verification code has expired (5-minute limit). Please request a new code.'
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+
+  // 🛡️ CHECK 4: CODE HASH MATCHING CHECK
+  const hashedInputCode = hashToken(code);
+
+  // ❌ WRONG CODE ENTERED:
+  if (hashedInputCode !== user.passwordResetCode) {
+    user.passwordResetAttempts += 1;
+    await user.save();
+
+    const remainingAttempts = 5 - user.passwordResetAttempts;
+
+    if (remainingAttempts <= 0) {
+      // 5-vathu thadava thappa potta udaney code-ai invalidate panrom:
+      user.passwordResetCode = undefined;
+      user.passwordResetExpiresAt = undefined;
+      user.passwordResetAttempts = 0;
+      await user.save();
+
+      const error = new Error('Too many failed attempts. This verification code has been blocked. Please request a new code.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const error = new Error(`Invalid verification code. You have ${remainingAttempts} attempt(s) remaining.`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // ✅ CORRECT CODE ENTERED:
+  // A. OTP velai mudinjadhu, DB-la irundhu azhikkirom:
+  user.passwordResetCode = undefined;
+  user.passwordResetExpiresAt = undefined;
+  user.passwordResetAttempts = 0;
+
+  // B. Pudhu password poda 15-minute single-use resetToken tharuvom:
+  const { rawToken, hashedToken } = generateTokenPair();
+  user.passwordResetToken = hashedToken;
+  user.passwordResetTokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+  await user.save();
+
+  return {
+    message: 'Verification code confirmed. You can now reset your password.',
+    resetToken: rawToken,
+  };
+};
+
+// ============================================================================
+// 8. 🔑 RESET PASSWORD SERVICE (Set New Password & Revoke Old Sessions)
+// ============================================================================
+const resetPassword = async ({ resetToken, password }) => {
+  // A. 15-minute token valid-a nu SHA-256 vachu thedurom:
+  const hashedToken = hashToken(resetToken);
+  const user = await userRepository.findByResetToken(hashedToken);
+
+  if (!user) {
+    const error = new Error('Invalid or expired reset token. Please request a new verification code.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // B. BCRYPT HASHING (12 Rounds):
+  const salt = await bcrypt.genSalt(12);//JWT
+  user.passwordHash = await bcrypt.hash(password, salt);
+
+  // C. RESET TOKENS-AI DESTROY PANROM:
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpiresAt = undefined;
+
+  // D. 🚪 SESSION REVOCATION (Security Essential!):
+  // Password maathiya udaney, vera enga yaaradhu login panni irundhaalum session invalidate aagidum!
+  user.lastLogoutAt = new Date();
+
+  await user.save();
+
+  return {
+    message: 'Password has been reset successfully. Please login with your new password.',
+  };
+};
 
 export default {
   login,
   setupPassword,
   getMe,
   resendInvitation,
-  logout
+  logout,
+  forgotPassword,    // 👈 New
+  verifyResetCode,   // 👈 New
+  resetPassword,     // 👈 New
 };

@@ -120,6 +120,42 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    
+    // ========================================================================
+    // 🔑 PASSWORD RESET & 6-DIGIT OTP FIELDS
+    // ========================================================================
+    // 1. 6-digit OTP code-oda SHA-256 hash inga store aagum:
+    passwordResetCode: {
+      type: String,
+      select: false, // Normal queries-la idhu veliya theriya koodadhu
+    },
+    // 2. OTP code 5 nimisham kalithu expire aagum date/time:
+    passwordResetExpiresAt: {
+      type: Date,
+      select: false,
+    },
+    // 3. Kadaisiya OTP anuppiya neram (60-second cooldown / rate limit check panna):
+    passwordResetLastSentAt: {
+      type: Date,
+      select: false,
+    },
+    // 4. Brute-force thadukka attempt counter (Default: 0).
+    // 5 thadava thappa potta code invalidate aagidum!
+    passwordResetAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    // 5. OTP verify aanadhum, pudhu password poda thara padum 15-minute temporary token hash:
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+    // 6. Andha resetToken expire aagum neram:
+    passwordResetTokenExpiresAt: {
+      type: Date,
+      select: false,
+    },
   },
   
   {

@@ -45,7 +45,6 @@ export const setupPasswordSchema = z
     message: 'Passwords do not match',
     path: ['confirmPassword'], // Error confirmPassword field-ku keela kaattum
   });
-
 // ============================================================================
 // 3. 🔁 RESEND INVITATION VALIDATION SCHEMA
 // Admin / HR oru employee-kku marubadiyum invite anupa indha email validation thevai.
@@ -58,9 +57,63 @@ export const resendInvitationSchema = z.object({
     .max(255)
     .transform((val) => val.toLowerCase()),
 });
+// ============================================================================
+// 4. 📩 FORGOT PASSWORD SCHEMA (Request 6-Digit OTP)
+// ============================================================================
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email('Please provide a valid email address')
+    .transform((val) => val.toLowerCase()),
+});
+
+// ============================================================================
+// 5. 🔢 VERIFY RESET CODE SCHEMA (Verify 6-Digit OTP)
+// ============================================================================
+export const verifyResetCodeSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email('Please provide a valid email address')
+    .transform((val) => val.toLowerCase()),
+
+  // Exactly 6-digits (0-9) mattum dhaan irukkanum:
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'Verification code must be exactly 6 digits'),
+});
+
+// ============================================================================
+// 6. 🔑 RESET PASSWORD SCHEMA (Set New Password using Reset Token)
+// ============================================================================
+export const resetPasswordSchema = z
+  .object({
+    resetToken: z
+      .string()
+      .trim()
+      .min(1, 'Reset token is required'),
+
+    password: z
+      .string()
+      .min(6, 'Password must be at least 6 characters long'),
+
+    confirmPassword: z
+      .string()
+      .min(6, 'Confirm password must be at least 6 characters long'),
+  })
+  // 🛡️ Passwords match aaganum:
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 export default {
   loginSchema,
   setupPasswordSchema,
-  resendInvitationSchema
+  resendInvitationSchema,
+  forgotPasswordSchema,
+  verifyResetCodeSchema,
+  resetPasswordSchema,
 };

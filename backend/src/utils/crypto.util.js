@@ -47,7 +47,20 @@ export const generateTokenPair = (byteSize = 32) => {
   };
 };
 
+/**
+ * 3. GENERATE 6-DIGIT NUMERIC OTP:
+ * Cryptographically secure 6-digit random number generate pannum (100000 - 999999).
+ * Math.random()-ku badhila Node.js crypto engine use panradhala hackers-al guess panna mudiyadhu.
+ * 
+ * @returns {string} 6-digit numeric string (eg: "849201")
+ */
+export const generateNumericOtp = () => {
+  // 100000-la irundhu 999999 varaikkum cryptographically random integer generate panrom:
+  return crypto.randomInt(100000, 1000000).toString();
+};
+
 export default {
   hashToken,
   generateTokenPair,
+  generateNumericOtp,
 };

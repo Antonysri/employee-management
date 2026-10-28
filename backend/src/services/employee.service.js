@@ -10,6 +10,9 @@ import { generateTokenPair } from '../utils/crypto.util.js';
 // 3. Constants import
 import { ROLES } from '../constants/roles.js';
 
+// Email Connection
+import { sendInvitationEmail } from '../utils/email.util.js';
+
 // ============================================================================
 // 🟢 CREATE EMPLOYEE & START INVITATION WORKFLOW
 // 1. Employee create pannum
@@ -68,17 +71,20 @@ const createEmployee = async (employeeData) => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   const invitationLink = `${clientUrl}/setup-password?token=${rawToken}`;
   // --------------------------------------------------------------------------
-  // STEP 7: EMAIL SIMULATION (Console Log for Local Dev Testing)
-  // Production-la real email pogum; Local dev-la terminal-la link print panrom!
+  // STEP 7: REAL EMAIL DISPATCH (Nodemailer Gmail SMTP)
   // --------------------------------------------------------------------------
-  console.log('\n============================================================');
-  console.log('✉️  [EMAIL SERVICE SIMULATION]');
-  console.log(`To: ${newEmployee.email} (${newEmployee.name})`);
-  console.log(`Subject: You have been invited to join Employee Portal!`);
-  console.log(`Role Assigned: ${newUser.role}`);
-  console.log(`🔗 Activation Link: ${invitationLink}`);
-  console.log(`⏳ Link Expires At: ${invitationExpiresAt.toISOString()}`);
-  console.log('============================================================\n');
+  try {
+    await sendInvitationEmail({
+      to: newEmployee.email,
+      name: newEmployee.name,
+      role: newUser.role,
+      invitationLink,
+    });
+  } catch (emailError) {
+    // மெயில் போகவில்லை என்றாலும் Employee உருவாகிவிட்டது.
+    // Console-ல் warning காட்டிவிட்டு, பிறகு Resend Invitation மூலம் அனுப்பிக்கொள்ளலாம்:
+    console.warn('⚠️ Invitation email delivery failed:', emailError.message);
+  }
   // --------------------------------------------------------------------------
   // STEP 8: RETURN DATA
   // Controller kitta employee details koodave invitation metadata-vai anupurom

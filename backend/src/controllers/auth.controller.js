@@ -69,7 +69,7 @@ const resendInvitation = async (req, res, next) => {
 };
 
 // backend/src/controllers/auth.controller.js
-
+// 5.logout
 const logout = async (req, res, next) => {
   try {
     await authService.logout(req.user._id);
@@ -85,11 +85,67 @@ const logout = async (req, res, next) => {
     next(error);
   }
 };
+// ============================================================================
+// 6. 📩 FORGOT PASSWORD CONTROLLER (Request 6-Digit OTP)
+// ============================================================================
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.validatedBody;
+    const result = await authService.forgotPassword(email);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    return next(error); // 429 Cooldown அல்லது 500 errors central handler-க்கு போகும்
+  }
+};
+
+// ============================================================================
+// 7. 🔢 VERIFY RESET CODE CONTROLLER (Verify 6-Digit OTP & 5-Attempt Limit)
+// ============================================================================
+const verifyResetCode = async (req, res, next) => {
+  try {
+    const { email, code } = req.validatedBody;
+    const result = await authService.verifyResetCode({ email, code });
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        resetToken: result.resetToken, // 15-minute token for password change
+      },
+    });
+  } catch (error) {
+    return next(error); // 400 Invalid code / Expired / Blocked errors
+  }
+};
+
+// ============================================================================
+// 8. 🔑 RESET PASSWORD CONTROLLER (Set New Password)
+// ============================================================================
+const resetPassword = async (req, res, next) => {
+  try {
+    const { resetToken, password } = req.validatedBody;
+    const result = await authService.resetPassword({ resetToken, password });
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 export default {
   login,
   setupPassword,
   getMe,
   resendInvitation,
-  logout
+  logout,
+  forgotPassword,
+  verifyResetCode,
+  resetPassword
 };

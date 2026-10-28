@@ -63,6 +63,24 @@ const updateLastLogout = async (userId) => {
   );
 };
 
+// 9. 🔍 FIND USER BY EMAIL WITH PASSWORD RESET FIELDS:
+// Normal-ah Mongoose OTP code-ai hide pannidum.
+// Inga '+' pottu OTP, Expiry, Cooldown, and Attempt fields-ai select panrom:
+const findByEmailWithResetFields = async (email) => {
+  return User.findOne({ email }).select(
+    '+passwordResetCode +passwordResetExpiresAt +passwordResetLastSentAt +passwordResetAttempts'
+  );
+};
+
+// 10. 🔍 FIND USER BY VALID RESET TOKEN (For setting new password):
+// OTP verify aana piragu user-kku kedaitha 15-minute reset token valid-a nu check panna:
+const findByResetToken = async (hashedToken) => {
+  return User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetTokenExpiresAt: { $gt: new Date() }, // 👈 15 mins kulla irukkanum
+  }).select('+passwordResetToken +passwordResetTokenExpiresAt');
+};
+
 export default {
   findByEmailWithPassword,
   findById,
@@ -72,4 +90,6 @@ export default {
   findByIdWithProfile,
   findDocumentByEmail,
   updateLastLogout,
+  findByEmailWithResetFields,
+  findByResetToken,
 };
