@@ -38,7 +38,7 @@ const login = async ({ email, password }) => {
   // User anupina plain password-aiyum, DB-la irukura hash-aiyum bcrypt compare pannum
   const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
 
-  if (!isPasswordMatch) {passwordHash
+  if (!isPasswordMatch) {
     const error = new Error('Invalid email or password');
     error.statusCode = 401;
     throw error;
