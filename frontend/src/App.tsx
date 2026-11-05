@@ -1,6 +1,17 @@
+// frontend/src/App.tsx
+
+// ============================================================================
+// MAIN APP COMPONENT (The Stage)
+// ============================================================================
+// Ithu thaan namma application-oda root stage.
+// Pinnaadi namma React Router & Auth Provider ellathayum inga thaan integrate pannuvom.
+
 function App() {
   return (
-    <h1>Hello Antony!</h1>
+    <div>
+      <h1>Role-Based Employee Management System 🏢</h1>
+      <p>Status: Frontend Architecture Initialization in Progress...</p>
+    </div>
   );
 }
 
