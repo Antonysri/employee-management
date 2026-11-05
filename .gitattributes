@@ -1,0 +1,7 @@
+# ============================================================================
+# GITHUB LINGUIST OVERRIDES
+# ============================================================================
+# Exclude backend JavaScript and frontend config files from language statistics
+# so that TypeScript displays as the primary language on the repository badge.
+backend/** linguist-detectable=false
+frontend/*.js linguist-detectable=false
